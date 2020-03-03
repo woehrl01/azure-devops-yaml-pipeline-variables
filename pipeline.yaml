@@ -1,0 +1,69 @@
+trigger:
+- master
+
+resources:
+  repositories: 
+  - repository: shared
+    type: github
+    endpoint: github.com_woehrl01
+    name: woehrl01/azure-devops-yaml-pipeline-variables-shared
+
+variables:
+- template: vars_global.yaml@shared
+
+stages:
+- stage: Dev
+  variables:
+  - template: vars_dev.yaml    # this is available to all jobs 
+  - template: vars_varianceA.yaml@shared
+  - template: var_concated.yaml@shared
+
+  jobs:
+  - job: PrintVariables
+    pool:
+      vmImage: 'ubuntu-16.04'
+    variables:
+    - name: job_variable1
+      value: value1
+    steps:
+    - template: step_variablecasing.yaml@shared
+    - task: CmdLine@2
+      inputs:
+        script: |
+          echo global: $(global_variable)
+          echo stage: $(stage_variable)
+          echo concated: $(inner_var)
+          echo job: $JOB_VARIABLE1
+          echo uppercase: $(uppercase_var)
+          echo lowercase: $(lowercase_var)
+    - task: CmdLine@2
+      inputs:
+        script: |
+          ls
+
+
+- stage: Prod
+  variables:
+  - template: vars_prod.yaml    # this is available to all jobs
+  - template: vars_varianceB.yaml@shared
+  - template: var_concated.yaml@shared
+
+  jobs:
+  - job: PrintVariables
+    pool:
+      vmImage: 'ubuntu-16.04'
+    variables:
+      job_variable1: value1    # this is only available in job1
+    steps:
+    - task: CmdLine@2
+      inputs:
+        script: |
+          echo global: $(global_variable)
+          echo stage: $(stage_variable)
+          echo concated: $(inner_var)
+          echo job: $JOB_VARIABLE1
+    - task: CmdLine@2
+      inputs:
+        script: |
+          ls
+
